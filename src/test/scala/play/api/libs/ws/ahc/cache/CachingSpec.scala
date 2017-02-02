@@ -11,32 +11,26 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
-import org.specs2.mutable.Specification
+import org.specs2.concurrent.ExecutionEnv
+import org.specs2.matcher.FutureMatchers
+import org.specs2.mutable.{BeforeAfter, Specification}
 import org.specs2.specification.AfterAll
 import play.api.libs.ws.ahc.StandaloneAhcWSClient
 
 /**
  *
  */
-class CachingSpec extends Specification with AfterAll {
+class CachingSpec(implicit ee: ExecutionEnv) extends Specification with BeforeAfter with AfterAll with FutureMatchers {
 
   implicit val system = ActorSystem("test")
   implicit val materializer = ActorMaterializer()
+  var wsClient: Option[StandaloneAhcWSClient] = None
 
   private val route: Route = {
     import akka.http.scaladsl.server.Directives._
-    headerValueByName("X-Request-Id") { value =>
-      respondWithHeader(RawHeader("X-Request-Id", value)) {
-        val httpEntity = HttpEntity(ContentTypes.`text/html(UTF-8)`, "<h1>Say hello to akka-http</h1>")
-        complete(httpEntity)
-      }
-    } ~ {
-      get {
-        parameters('key.as[String]) { (key) =>
-          val httpEntity = HttpEntity(ContentTypes.`text/html(UTF-8)`, s"<h1>Say hello to akka-http, key = $key</h1>")
-          complete(httpEntity)
-        }
-      }
+    respondWithHeader(RawHeader("Cache-Control", "public")) {
+      val httpEntity = HttpEntity(ContentTypes.`text/html(UTF-8)`, "<h1>Say hello to akka-http</h1>")
+      complete(httpEntity)
     }
   }
 
@@ -44,26 +38,38 @@ class CachingSpec extends Specification with AfterAll {
     Http().bindAndHandle(route, "localhost", port = 9000)
   }
 
+  override def before = {
+    wsClient = Some(StandaloneAhcWSClient(httpCache = Some(AhcHttpCache(createCache()))))
+  }
+
+  override def after = {
+    val cacheManager = Caching.getCachingProvider.getCacheManager
+    cacheManager.destroyCache("play-ws-cache")
+    wsClient.foreach(_.close())
+  }
+
   override def afterAll = {
-    futureServer.foreach(_.unbind())
+    futureServer.foreach(_.unbind())(materializer.executionContext)
     system.terminate()
   }
 
-  "cache" should {
+  def createCache(): Cache[CacheKey, CacheEntry] = {
+    val cacheManager = Caching.getCachingProvider.getCacheManager
+    val configuration = new MutableConfiguration()
+      .setTypes(classOf[CacheKey], classOf[CacheEntry])
+      .setStoreByValue(false)
+      .setExpiryPolicyFactory(new SingletonFactory(new EternalExpiryPolicy()))
+    cacheManager.createCache("play-ws-cache", configuration)
+  }
 
-    "test" in {
+  def ws: StandaloneAhcWSClient = wsClient.get
 
-      // Create the standalone WS client with a cache
-      val wsClient = StandaloneAhcWSClient(httpCache = Some(AhcHttpCache(createCache())))
+  "GET" should {
 
-      def createCache(): Cache[CacheKey, CacheEntry] = {
-        val cacheManager = Caching.getCachingProvider.getCacheManager
-        val configuration = new MutableConfiguration()
-          .setTypes(classOf[CacheKey], classOf[CacheEntry])
-          .setStoreByValue(false)
-          .setExpiryPolicyFactory(new SingletonFactory(new EternalExpiryPolicy()))
-        cacheManager.createCache("play-ws-cache", configuration)
-      }
+    "work once" in {
+      ws.url("http://localhost:9000/").get().map { response =>
+        response.body must be("<h1>Say hello to akka-http</h1>")
+      }.await
     }
 
   }
