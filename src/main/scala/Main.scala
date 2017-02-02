@@ -42,7 +42,7 @@ object Main {
 
     override def preStart(): Unit = {
       implicit val ec = system.dispatchers.defaultGlobalDispatcher
-      val url = "http://localhost:9000/cache.txt"
+      val url = "https://playframework.com"
 
       // query every five seconds, ensuring that the cache works...
       system.scheduler.schedule(0 seconds, 5 seconds, self, GET(url))

@@ -5,15 +5,25 @@ import javax.cache.configuration.FactoryBuilder.SingletonFactory
 import javax.cache.configuration.MutableConfiguration
 import javax.cache.expiry.EternalExpiryPolicy
 
+import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.server.Route
+import akka.stream.ActorMaterializer
+import org.specs2.mutable.Specification
+import org.specs2.specification.AfterAll
 import play.api.libs.ws.ahc.StandaloneAhcWSClient
 
 /**
  *
  */
-class CachingSpec extends Specification {
+class CachingSpec extends Specification with AfterAll {
 
+  implicit val system = ActorSystem("test")
+  implicit val materializer = ActorMaterializer()
 
-  private val route = {
+  private val route: Route = {
     import akka.http.scaladsl.server.Directives._
     headerValueByName("X-Request-Id") { value =>
       respondWithHeader(RawHeader("X-Request-Id", value)) {
@@ -31,12 +41,11 @@ class CachingSpec extends Specification {
   }
 
   private val futureServer = {
-    Http().bindAndHandle(route, "localhost", testServerPort)
+    Http().bindAndHandle(route, "localhost", port = 9000)
   }
 
   override def afterAll = {
     futureServer.foreach(_.unbind())
-    client.close()
     system.terminate()
   }
 

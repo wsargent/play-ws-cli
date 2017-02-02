@@ -19,6 +19,7 @@ val caffeine = Seq(
   "com.github.ben-manes.caffeine" % "jcache" % "2.3.5"
 )
 
+
 libraryDependencies += "com.google.code.findbugs" % "jsr305" % "3.0.1" % Compile
 
 libraryDependencies += ("com.typesafe.play" %% "play-ahc-ws-standalone" % "1.0.0-SNAPSHOT")
@@ -28,6 +29,8 @@ libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.9"
 libraryDependencies ++= caffeine
 
 libraryDependencies ++= specsBuild.map(_ % Test)
+
+libraryDependencies += "com.typesafe.akka" %% "akka-http" % "10.0.2" % Test
 
 mainClass := Some("Main")
 
