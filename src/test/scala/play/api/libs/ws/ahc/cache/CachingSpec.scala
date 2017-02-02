@@ -15,16 +15,23 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mutable.{BeforeAfter, Specification}
 import org.specs2.specification.AfterAll
-import play.api.libs.ws.ahc.StandaloneAhcWSClient
+import play.api.libs.ws.ahc._
+import play.shaded.ahc.org.asynchttpclient._
 
 /**
  *
  */
 class CachingSpec(implicit ee: ExecutionEnv) extends Specification with BeforeAfter with AfterAll with FutureMatchers {
 
+  sequential
+
   implicit val system = ActorSystem("test")
   implicit val materializer = ActorMaterializer()
-  var wsClient: Option[StandaloneAhcWSClient] = None
+  val asyncHttpClient: AsyncHttpClient = {
+    val config = AhcWSClientConfigFactory.forClientConfig()
+    val ahcConfig: AsyncHttpClientConfig = new AhcConfigBuilder(config).build()
+    new DefaultAsyncHttpClient(ahcConfig)
+  }
 
   private val route: Route = {
     import akka.http.scaladsl.server.Directives._
@@ -39,17 +46,16 @@ class CachingSpec(implicit ee: ExecutionEnv) extends Specification with BeforeAf
   }
 
   override def before = {
-    wsClient = Some(StandaloneAhcWSClient(httpCache = Some(AhcHttpCache(createCache()))))
   }
 
   override def after = {
     val cacheManager = Caching.getCachingProvider.getCacheManager
     cacheManager.destroyCache("play-ws-cache")
-    wsClient.foreach(_.close())
   }
 
   override def afterAll = {
     futureServer.foreach(_.unbind())(materializer.executionContext)
+    asyncHttpClient.close()
     system.terminate()
   }
 
@@ -62,13 +68,13 @@ class CachingSpec(implicit ee: ExecutionEnv) extends Specification with BeforeAf
     cacheManager.createCache("play-ws-cache", configuration)
   }
 
-  def ws: StandaloneAhcWSClient = wsClient.get
-
   "GET" should {
 
     "work once" in {
+      val ws = new StandaloneAhcWSClient(asyncHttpClient, httpCache = Some(AhcHttpCache(createCache())))
+
       ws.url("http://localhost:9000/").get().map { response =>
-        response.body must be("<h1>Say hello to akka-http</h1>")
+        response.body must be_==("<h1>Say hello to akka-http</h1>")
       }.await
     }
 
