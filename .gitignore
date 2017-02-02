@@ -9,8 +9,4 @@ target/
 
 *.iws
 
-.gitignore
 .idea/
-build.sbt
-project/
-src/
