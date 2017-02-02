@@ -1,0 +1,16 @@
+*.class
+*.log
+
+.cache
+.history
+.lib/
+dist/*
+target/
+
+*.iws
+
+.gitignore
+.idea/
+build.sbt
+project/
+src/
