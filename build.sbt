@@ -20,9 +20,8 @@ val caffeine = Seq(
   "com.github.ben-manes.caffeine" % "jcache" % "2.3.5"
 )
 
+// absolutely nothing happens in SNAPSHOT until you blow away ~/.ivy2/cache
 libraryDependencies += ("com.typesafe.play" %% "play-ahc-ws-standalone" % "1.0.0-SNAPSHOT")
-libraryDependencies += ("com.typesafe.play" %% "shaded-asynchttpclient" % "1.0.0-SNAPSHOT")
-libraryDependencies += ("com.typesafe.play" %% "shaded-oauth" % "1.0.0-SNAPSHOT")
 
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.9"
 
