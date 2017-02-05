@@ -1,37 +1,21 @@
-name := "ws-cache-example"
+import Dependencies._
 
-version := "1.0.0"
+name := "ws-cache-example"
 
 scalaVersion := "2.12.1"
 
-resolvers ++= DefaultOptions.resolvers(snapshot = true)
+//resolvers ++= DefaultOptions.resolvers(snapshot = true)
 resolvers in ThisBuild += Resolver.sonatypeRepo("public")
 
-val specsVersion = "3.8.6"
-val specsBuild = Seq(
-  "specs2-core",
-  "specs2-junit",
-  "specs2-mock"
-).map("org.specs2" %% _ % specsVersion)
-
-// https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/jcache
-val caffeine = Seq(
-  "com.google.code.findbugs" % "jsr305" % "3.0.1" % Compile,
-  "com.github.ben-manes.caffeine" % "jcache" % "2.3.5"
-)
-
-// absolutely nothing happens in SNAPSHOT until you blow away ~/.ivy2/cache
-libraryDependencies += ("com.typesafe.play" %% "play-ahc-ws-standalone" % "1.0.0-SNAPSHOT")
-
-libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.9"
-
+libraryDependencies ++= playWs
+libraryDependencies ++= logback
 libraryDependencies ++= caffeine
+libraryDependencies ++= akkaHttp
+
+// XXX FIXME Should not need explicit dependencies, this should come in from playWS!
+libraryDependencies ++= shaded
 
 libraryDependencies ++= specsBuild.map(_ % Test)
-
-libraryDependencies += "com.typesafe.akka" %% "akka-http" % "10.0.2" % Test
-
-mainClass := Some("Main")
 
 scalacOptions in (Compile, doc) ++= Seq(
   "-target:jvm-1.8",
@@ -46,5 +30,7 @@ scalacOptions in (Compile, doc) ++= Seq(
   "-Ydebug", // debug compiler
   "-Ywarn-dead-code"
 )
+
+mainClass := Some("Main")
 
 fork in run := true
