@@ -86,7 +86,9 @@ object Main {
     override def receive: Receive = {
       case GET(url) =>
         implicit val ec = context.dispatcher
-        wsClient.url(url).get().map(response => response.statusText)
+        wsClient.url(url).get().map { response =>
+          println(response.body)
+        }
       case SHUTDOWN =>
         self ! PoisonPill
     }

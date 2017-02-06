@@ -14,16 +14,16 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
   )
 
+  val ammoniteVersion = "0.8.2"
+  val ammonite = Seq("com.lihaoyi" % "ammonite" % ammoniteVersion)
+
   // https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/jcache
   val caffeine = Seq(
     "com.google.code.findbugs" % "jsr305" % "3.0.1" % Compile,
     "com.github.ben-manes.caffeine" % "jcache" % "2.3.5"
   )
-  val playWsVersion = "1.0.0-SNAPSHOT"
-  val shaded = Seq(
-    "com.typesafe.play" % "shaded-asynchttpclient" % playWsVersion,
-    "com.typesafe.play" % "shaded-oauth" % playWsVersion
-  )
+
+  val playWsVersion = "1.0.0-M3"
   val playWs = Seq("com.typesafe.play" %% "play-ahc-ws-standalone" % playWsVersion)
 
   val logbackVersion =  "1.1.9"

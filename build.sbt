@@ -1,8 +1,9 @@
 import Dependencies._
 
-name := "ws-cache-example"
+name := "play-ws-cli"
 
 scalaVersion := "2.12.1"
+//crossScalaVersions := Seq("2.12.1", "2.11.8")
 
 //resolvers ++= DefaultOptions.resolvers(snapshot = true)
 resolvers in ThisBuild += Resolver.sonatypeRepo("public")
@@ -11,9 +12,7 @@ libraryDependencies ++= playWs
 libraryDependencies ++= logback
 libraryDependencies ++= caffeine
 libraryDependencies ++= akkaHttp
-
-// XXX FIXME Should not need explicit dependencies, this should come in from playWS!
-libraryDependencies ++= shaded
+//libraryDependencies ++= ammonite.map(_ cross CrossVersion.full)
 
 libraryDependencies ++= specsBuild.map(_ % Test)
 
@@ -27,9 +26,10 @@ scalacOptions in (Compile, doc) ++= Seq(
   "-Ywarn-nullary-unit",
   "-Xfatal-warnings",
   "-Xlint",
-  "-Ydebug", // debug compiler
   "-Ywarn-dead-code"
 )
+
+//initialCommands in (Test, console) := """ammonite.Main().run()"""
 
 mainClass := Some("Main")
 
